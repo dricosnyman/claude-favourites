@@ -17,7 +17,7 @@ You need **Claude Code 2.1.287 or newer** (that's when mods arrived).
 **From GitHub**, at the prompt of a terminal session:
 
 ```
-/plugin install quick-bar --marketplace <owner>/<repo>
+/plugin install quick-bar --marketplace dricosnyman/claude-favourites
 ```
 
 Answer `y` to add the marketplace, then pick the **user** scope so it loads in every project.

@@ -1,0 +1,12 @@
+{
+  "name": "quick-bar",
+  "description": "Favourites for Claude Code: one-click icons for your commands and skills.",
+  "owner": { "name": "Drico" },
+  "plugins": [
+    {
+      "name": "quick-bar",
+      "source": "./",
+      "description": "A ⚡ at the bottom-right of the text box opens your favourites: icons for the commands and skills you pick."
+    }
+  ]
+}

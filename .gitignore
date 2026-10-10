@@ -1,0 +1,4 @@
+# Written by Claude Code each time it loads the mod; not part of the plugin.
+.claude-plugin/types/
+tsconfig.json
+node_modules/

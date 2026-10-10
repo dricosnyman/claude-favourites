@@ -1,0 +1,9 @@
+{
+  "name": "quick-bar",
+  "version": "1.1.0",
+  "author": {
+    "name": "Drico"
+  },
+  "description": "Favourites: a ⚡ at the bottom-right of the text box opens a popup of icons for your chosen commands and skills; hover for names, search to add.",
+  "types": "./types/index.d.ts"
+}

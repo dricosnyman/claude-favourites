@@ -25,3 +25,21 @@ test('picking an icon adds a favourite or changes its icon', () => {
   expect(setIcon([], 'chat', '💬')).toEqual([{ command: 'chat', icon: '💬' }])
   expect(setIcon([{ command: 'chat', icon: '💬' }], 'chat', '🤖')).toEqual([{ command: 'chat', icon: '🤖' }])
 })
+
+import { defaultAction, ICONS, setAction } from './labels'
+
+test('90 icons, none repeated', () => {
+  expect(ICONS.length).toBe(90)
+  expect(new Set(ICONS).size).toBe(90)
+})
+
+test('immediate commands run; skills wait in the text box; other commands run', () => {
+  expect(defaultAction({ name: 'chat', source: 'plugin' }, true)).toBe('run')
+  expect(defaultAction({ name: 'find-skills', source: 'user' })).toBe('fill')
+  expect(defaultAction({ name: 'superpowers:brainstorming', source: 'plugin' })).toBe('fill')
+  expect(defaultAction({ name: 'notes', source: 'plugin' })).toBe('run')
+})
+
+test('a click action can be changed per favourite', () => {
+  expect(setAction([{ command: 'x', icon: '⭐' }], 'x', 'fill')).toEqual([{ command: 'x', icon: '⭐', action: 'fill' }])
+})

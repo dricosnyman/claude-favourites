@@ -1,8 +1,8 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { Favourite, Mode } from '../types'
-import { ICONS, loadFavourites, search, setIcon } from './labels'
+import type { ClickAction, Favourite, Mode } from '../types'
+import { defaultAction, ICON_GROUPS, loadFavourites, search, setAction, setIcon } from './labels'
 
 const POPUP = 'quick-bar-popup'
 const SEARCH_SHOWN = 25
@@ -13,6 +13,7 @@ const mode = atom({ plugin: 'quick-bar', key: 'mode' } as const, 'grid' as Mode)
 const query = atom({ plugin: 'quick-bar', key: 'query' } as const, '')
 const pending = atom({ plugin: 'quick-bar', key: 'pending' } as const, null as string | null)
 const showBuiltins = atom({ plugin: 'quick-bar', key: 'showBuiltins' } as const, false)
+const immediates = atom({ plugin: 'quick-bar', key: 'immediates' } as const, [] as string[])
 
 async function setFavourites($: EngineInterface, change: (list: Favourite[]) => Favourite[]) {
   const next = await update($, favourites, change)
@@ -30,9 +31,14 @@ async function openPopup($: EngineInterface) {
   await $.ui.open({ id: POPUP, title: 'Favourites', focus: true, closeOnEscape: true, holdToasts: true })
 }
 
-// Closes the popup, then runs a favourite as if it were typed; a text answer shows as a popup message.
-async function runFavourite($: EngineInterface, command: string) {
+// Closes the popup, then either puts the command in the text box (to add an instruction) or runs it at once.
+async function useFavourite($: EngineInterface, command: string, action: ClickAction) {
   await $.ui.close({ id: POPUP })
+  if (action === 'fill') {
+    const filled = await $.prompt.fill({ text: `/${command} ` })
+    if (!filled.isFilled) $.ui.toast(`Type /${command} to use it here.`)
+    return
+  }
   try {
     const result = await $.command.run({ command })
     const text = result.text?.trim()
@@ -47,6 +53,15 @@ export const register: Register = on => {
     const saved = loadFavourites(await $.store.get('favourites'))
     await update($, favourites, () => saved)
     await $.command.register({ name: 'fav', description: 'Open your favourites: one-click commands and skills', immediate: true })
+    return next(e)
+  })
+
+  // Claude Code says whether each command runs at once mid-turn when it describes it; remember the ones that do.
+  on('command.describe', async ($, e, next) => {
+    if (e.immediate) {
+      const name = e.command
+      if (!(await read($, immediates)).includes(name)) await update($, immediates, l => [...l, name])
+    }
     return next(e)
   })
 
@@ -74,6 +89,12 @@ export const register: Register = on => {
     const byName = new Map(all.map(c => [c.name, c]))
     const favs = await read($, favourites)
     const view = await read($, mode)
+    const quick = await read($, immediates)
+    // What a click on a favourite does: the person's choice, else the default for its kind.
+    const actionOf = (f: Favourite): ClickAction => {
+      const info = byName.get(f.command)
+      return f.action ?? (info ? defaultAction(info, quick.includes(f.command)) : 'run')
+    }
 
     // ---- The icons: hover for the name, click to run ----
     if (view === 'grid') {
@@ -91,7 +112,7 @@ export const register: Register = on => {
           <Box flexDirection="row" flexWrap="wrap" gap={2}>
             {here.map(f => (
               <Box key={`fav-${f.command}`} flexDirection="column">
-                <Button key={`run-${f.command}`} plain label={f.icon} onPress={() => runFavourite($, f.command)} />
+                <Button key={`run-${f.command}`} plain label={f.icon} onPress={() => useFavourite($, f.command, actionOf(f))} />
                 <Box
                   position="absolute"
                   top={1}
@@ -192,25 +213,64 @@ export const register: Register = on => {
             </Text>
             <Button key="back" plain dimColor label="← Back" onPress={() => goTo($, current ? 'edit' : 'add')} />
           </Box>
-          <Box flexDirection="row" flexWrap="wrap" gap={2}>
-            {ICONS.map(icon => (
-              <Button
-                key={`icon-${icon}`}
-                plain
-                label={icon === current ? `[${icon}]` : icon}
-                onPress={async () => {
-                  if (!command) return
-                  await setFavourites($, list => setIcon(list, command, icon))
-                  await goTo($, 'grid')
-                }}
-              />
-            ))}
-          </Box>
+          {ICON_GROUPS.map(group => (
+            <Box key={`group-${group.area}`} flexDirection="column">
+              <Text dimColor>{group.area}</Text>
+              <Box flexDirection="row" flexWrap="wrap" gap={2}>
+                {group.icons.map(icon => (
+                  <Button
+                    key={`icon-${icon}`}
+                    plain
+                    label={icon === current ? `[${icon}]` : icon}
+                    onPress={async () => {
+                      if (!command) return
+                      const isNew = !favs.some(f => f.command === command)
+                      await setFavourites($, list => setIcon(list, command, icon))
+                      await goTo($, isNew ? 'action' : 'grid')
+                    }}
+                  />
+                ))}
+              </Box>
+            </Box>
+          ))}
         </Box>
       )
     }
 
-    // ---- Edit: change an icon or remove a favourite ----
+    // ---- Action: what a click on the new favourite does ----
+    if (view === 'action') {
+      const command = await read($, pending)
+      const fav = favs.find(f => f.command === command)
+      const chosen = fav ? actionOf(fav) : 'run'
+      const choose = async (action: ClickAction) => {
+        if (command) await setFavourites($, list => setAction(list, command, action))
+        await goTo($, 'grid')
+      }
+      return (
+        <Box flexDirection="column" gap={1} paddingX={1}>
+          <Text bold color="claude">
+            {fav?.icon} When you click /{command}:
+          </Text>
+          <Box flexDirection="column" gap={1}>
+            <Button
+              key="choose-fill"
+              variant={chosen === 'fill' ? 'primary' : undefined}
+              label="✏️ Put it in my text box, so I can add an instruction"
+              onPress={() => choose('fill')}
+            />
+            <Button
+              key="choose-run"
+              variant={chosen === 'run' ? 'primary' : undefined}
+              label="⚡ Run it at once"
+              onPress={() => choose('run')}
+            />
+          </Box>
+          <Text dimColor>The highlighted one is the usual choice for this kind. You can change it later in ✎ Edit.</Text>
+        </Box>
+      )
+    }
+
+    // ---- Edit: change an icon or what a click does, or remove a favourite ----
     return (
       <Box flexDirection="column" gap={1} paddingX={1}>
         <Box flexDirection="row" gap={2} alignItems="center">
@@ -236,6 +296,13 @@ export const register: Register = on => {
                   await update($, pending, () => f.command)
                   await goTo($, 'icon')
                 }}
+              />
+              <Button
+                key={`action-${f.command}`}
+                plain
+                dimColor
+                label={actionOf(f) === 'fill' ? '✏️ Text box' : '⚡ Runs'}
+                onPress={() => setFavourites($, list => setAction(list, f.command, actionOf(f) === 'fill' ? 'run' : 'fill'))}
               />
               <Button
                 key={`remove-${f.command}`}

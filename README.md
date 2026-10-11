@@ -49,6 +49,12 @@ Disable **quick-bar** in your plugin settings, or remove it:
 claude plugin uninstall quick-bar@quick-bar
 ```
 
+## Works with
+
+The Claude Code **desktop app** (Code tab) and the **terminal**, on Windows, Mac and Linux. In the VS Code extension a mod can't draw, so the ⚡ won't show there.
+
 ## Licence
 
 MIT. See [LICENSE](LICENSE).
+
+Made by Drico, built together with Claude Code.

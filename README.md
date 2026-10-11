@@ -4,7 +4,7 @@ Stop typing `/commands`. Click a small **⚡** at the bottom-right of the text b
 
 - **Icons only.** Hover over one to see its name. Click to use it.
 - **Skills wait for your instruction.** A click puts a skill in your text box (`/find-skills ▌`), so you can add what you want and press Enter. Commands like `/chat` just run. You choose per favourite; sensible defaults come first.
-- **＋ Add** searches every command and skill you have, live as you type. Pick one, then pick its icon from 90 emoji grouped by area (coding, writing, data, design, learning, plans and more).
+- **＋ Add** searches every command and skill you have, live as you type. Pick one, then pick its icon from 140 emoji grouped by area (coding, writing, data, design, learning, plans, everyday life and more).
 - **✎ Edit** changes an icon, what a click does, or removes a favourite.
 - **Works while Claude is busy**, and your favourites are kept across sessions and projects.
 - Prefer typing? `/fav` opens the popup too. **Esc** closes it.

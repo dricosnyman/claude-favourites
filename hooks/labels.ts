@@ -5,15 +5,16 @@ import type { ClickAction, Favourite } from '../types'
 // The icons to pick from, grouped by the kind of skill they suit: emoji, so they draw in colour everywhere
 // with nothing to download. Single-codepoint emoji only, so every terminal and the desktop app draw them alike.
 export const ICON_GROUPS: { area: string; icons: string[] }[] = [
-  { area: 'Coding', icons: ['💻', '⌨️', '🖥️', '🛠️', '🔧', '⚙️', '🐞', '🧱', '🌐', '🗄️', '🔌', '📡', '🧩', '📦'] },
-  { area: 'Writing & docs', icons: ['📝', '✏️', '✍️', '🖋️', '📄', '📖', '📚', '🗒️', '📰', '🔤'] },
-  { area: 'Data & maths', icons: ['📊', '📈', '📉', '🔢', '🧮', '📐', '🧾', '💰'] },
-  { area: 'Talk & people', icons: ['💬', '📧', '📣', '🗣️', '👥', '🤝'] },
-  { area: 'Design & media', icons: ['🎨', '🖌️', '🖼️', '📷', '🎬', '🎞️', '🎙️', '🎧', '🎵', '🎮'] },
-  { area: 'Learning & science', icons: ['🎓', '🏫', '🧠', '💡', '🔬', '🧪', '🧬', '🔭', '⚗️', '🌱'] },
-  { area: 'Plans & time', icons: ['📅', '🗓️', '⏰', '⏳', '🎯', '📌', '📁', '🧭', '💼', '🛒', '🏷️'] },
-  { area: 'Safety & upkeep', icons: ['🔒', '🔑', '🛡️', '🚦', '🧹', '🔄', '🗜️', '✅'] },
-  { area: 'Fun & AI', icons: ['🤖', '✨', '🪄', '⚡', '🚀', '🔥', '⭐', '🏆', '🎲', '🔍', '🌍', '🏠', '❤️'] },
+  { area: 'Coding', icons: ['💻', '⌨️', '🖥️', '🖱️', '💾', '🛠️', '🔧', '⚙️', '🧰', '🐞', '🧱', '🌐', '🔗', '🗄️', '🔌', '📡', '📟', '🐙', '🧩', '📦'] },
+  { area: 'Writing & docs', icons: ['📝', '✏️', '✍️', '🖋️', '📄', '📑', '📋', '📜', '📖', '📚', '🗒️', '📰', '🗞️', '💭', '🔤'] },
+  { area: 'Data & maths', icons: ['📊', '📈', '📉', '💹', '🔢', '➗', '♾️', '🧮', '📐', '📏', '🗃️', '🧾', '💰'] },
+  { area: 'Talk & people', icons: ['💬', '📧', '📨', '💌', '📞', '📣', '🗣️', '👋', '🙋', '👥', '🤝'] },
+  { area: 'Design & media', icons: ['🎨', '🖌️', '🖍️', '🖼️', '📷', '🎬', '🎞️', '📺', '🎭', '🎙️', '🎤', '🎧', '🎵', '🎹', '🎸', '🎮'] },
+  { area: 'Learning & science', icons: ['🎓', '🏫', '🏛️', '🧠', '💡', '🔬', '🧪', '🧫', '🦠', '🧬', '⚛️', '🧲', '🌡️', '🔭', '⚗️', '🌱'] },
+  { area: 'Plans & time', icons: ['📅', '🗓️', '📆', '⏰', '⏳', '⌛', '🎯', '📌', '📍', '🗺️', '🧭', '📁', '🗂️', '💼', '🛒', '🏷️'] },
+  { area: 'Safety & upkeep', icons: ['🔒', '🔐', '🔑', '🛡️', '🚨', '⚠️', '🚦', '🩹', '🧹', '🔄', '🗜️', '✅'] },
+  { area: 'Fun & AI', icons: ['🤖', '✨', '🪄', '🔮', '👾', '⚡', '🚀', '🔥', '⭐', '🌈', '🎉', '🏆', '🎲', '🔍'] },
+  { area: 'Life & world', icons: ['🌍', '🏠', '❤️', '🍳', '☕', '⚽', '🌙'] },
 ]
 
 export const ICONS = ICON_GROUPS.flatMap(g => g.icons)

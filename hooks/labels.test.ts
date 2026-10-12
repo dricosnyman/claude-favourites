@@ -26,7 +26,7 @@ test('picking an icon adds a favourite or changes its icon', () => {
   expect(setIcon([{ command: 'chat', icon: '💬' }], 'chat', '🤖')).toEqual([{ command: 'chat', icon: '🤖' }])
 })
 
-import { defaultAction, ICONS, setAction } from './labels'
+import { actionFor, defaultAction, ICONS, kindOf, setKind } from './labels'
 
 test('150 icons, none repeated', () => {
   expect(ICONS.length).toBe(150)
@@ -40,6 +40,15 @@ test('immediate commands run; skills wait in the text box; other commands run', 
   expect(defaultAction({ name: 'notes', source: 'plugin' })).toBe('run')
 })
 
-test('a click action can be changed per favourite', () => {
-  expect(setAction([{ command: 'x', icon: '⭐' }], 'x', 'fill')).toEqual([{ command: 'x', icon: '⭐', action: 'fill' }])
+test('old click choices become kinds; unset ones get the usual guess', () => {
+  expect(kindOf({ command: 'a', icon: '⭐', action: 'fill' })).toBe('skill')
+  expect(kindOf({ command: 'b', icon: '⭐', action: 'run' })).toBe('plugin')
+  expect(kindOf({ command: 'find-skills', icon: '🔍' }, { name: 'find-skills', source: 'user' })).toBe('skill')
+  expect(kindOf({ command: 'chat', icon: '💬' }, { name: 'chat', source: 'plugin' }, true)).toBe('plugin')
+})
+
+test('a kind decides the click and replaces the old choice', () => {
+  expect(actionFor('skill')).toBe('fill')
+  expect(actionFor('plugin')).toBe('run')
+  expect(setKind([{ command: 'x', icon: '⭐', action: 'fill' }], 'x', 'plugin')).toEqual([{ command: 'x', icon: '⭐', kind: 'plugin' }])
 })

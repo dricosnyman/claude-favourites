@@ -1,6 +1,6 @@
 // Icons and search for the favourites popup. Pure: no `$`.
 
-import type { ClickAction, Favourite } from '../types'
+import type { ClickAction, Favourite, Kind } from '../types'
 
 // The icons to pick from, grouped by the kind of skill they suit: emoji, so they draw in colour everywhere
 // with nothing to download. Single-codepoint emoji where possible, so every terminal and the desktop app draw them alike.
@@ -48,9 +48,25 @@ export function defaultAction(command: { name: string; source: string }, isImmed
   return command.source === 'user' || command.name.includes(':') ? 'fill' : 'run'
 }
 
-// Sets what a click on one favourite does.
-export function setAction(list: Favourite[], command: string, action: ClickAction): Favourite[] {
-  return list.map(f => (f.command === command ? { ...f, action } : f))
+// A skill fills the text box; a plugin command runs.
+export function actionFor(kind: Kind): ClickAction {
+  return kind === 'skill' ? 'fill' : 'run'
+}
+
+// A favourite's kind: as chosen, else from an older click choice, else the usual guess for the command.
+export function kindOf(f: Favourite, command?: { name: string; source: string }, isImmediate = false): Kind {
+  if (f.kind) return f.kind
+  if (f.action) return f.action === 'fill' ? 'skill' : 'plugin'
+  return command && defaultAction(command, isImmediate) === 'fill' ? 'skill' : 'plugin'
+}
+
+// Sets one favourite's kind, dropping any older click choice.
+export function setKind(list: Favourite[], command: string, kind: Kind): Favourite[] {
+  return list.map(f => {
+    if (f.command !== command) return f
+    const { action: _, ...rest } = f
+    return { ...rest, kind }
+  })
 }
 
 // Adds a favourite, or changes the icon of one already there.

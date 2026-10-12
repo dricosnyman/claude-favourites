@@ -1,8 +1,8 @@
 import { atom, read, update } from 'claude-code'
 import type { EngineInterface, Register } from 'claude-code'
 
-import type { ClickAction, Favourite, Mode } from '../types'
-import { defaultAction, ICON_GROUPS, loadFavourites, search, setAction, setIcon } from './labels'
+import type { ClickAction, Favourite, Kind, Mode } from '../types'
+import { actionFor, ICON_GROUPS, kindOf, loadFavourites, search, setIcon, setKind } from './labels'
 
 const POPUP = 'quick-bar-popup'
 const SEARCH_SHOWN = 25
@@ -14,10 +14,16 @@ const query = atom({ plugin: 'quick-bar', key: 'query' } as const, '')
 const pending = atom({ plugin: 'quick-bar', key: 'pending' } as const, null as string | null)
 const showBuiltins = atom({ plugin: 'quick-bar', key: 'showBuiltins' } as const, false)
 const immediates = atom({ plugin: 'quick-bar', key: 'immediates' } as const, [] as string[])
+const tab = atom({ plugin: 'quick-bar', key: 'tab' } as const, 'plugin' as Kind)
 
 async function setFavourites($: EngineInterface, change: (list: Favourite[]) => Favourite[]) {
   const next = await update($, favourites, change)
   await $.store.set('favourites', next)
+}
+
+async function setTab($: EngineInterface, to: Kind) {
+  await update($, tab, (): Kind => to)
+  await $.store.set('tab', to)
 }
 
 async function goTo($: EngineInterface, to: Mode) {
@@ -52,6 +58,8 @@ export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     const saved = loadFavourites(await $.store.get('favourites'))
     await update($, favourites, () => saved)
+    const savedTab = await $.store.get('tab')
+    await update($, tab, (): Kind => (savedTab === 'skill' ? 'skill' : 'plugin'))
     await $.command.register({ name: 'fav', description: 'Open your favourites: one-click commands and skills', immediate: true })
     return next(e)
   })
@@ -90,25 +98,40 @@ export const register: Register = on => {
     const favs = await read($, favourites)
     const view = await read($, mode)
     const quick = await read($, immediates)
-    // What a click on a favourite does: the person's choice, else the default for its kind.
-    const actionOf = (f: Favourite): ClickAction => {
-      const info = byName.get(f.command)
-      return f.action ?? (info ? defaultAction(info, quick.includes(f.command)) : 'run')
-    }
+    // Which tab a favourite lives in, and so what a click does.
+    const kindOfFav = (f: Favourite): Kind => kindOf(f, byName.get(f.command), quick.includes(f.command))
+    const actionOf = (f: Favourite): ClickAction => actionFor(kindOfFav(f))
 
     // ---- The icons: hover for the name, click to run ----
     if (view === 'grid') {
-      const here = favs.filter(f => byName.has(f.command))
+      const open = await read($, tab)
+      const here = favs.filter(f => byName.has(f.command) && kindOfFav(f) === open)
+      const tabs: [Kind, string][] = [
+        ['plugin', '🧩 Plugins'],
+        ['skill', '🎓 Skills'],
+      ]
       return (
         <Box flexDirection="column" gap={1} paddingX={1}>
-          <Box flexDirection="row" gap={2} alignItems="center">
+          <Box flexDirection="row" gap={2} alignItems="center" flexWrap="wrap">
             <Text bold color="claude">
-              ⚡ Favourites
+              ⚡
             </Text>
+            {tabs.map(([kind, label]) => (
+              <Button
+                key={`tab-${kind}`}
+                variant={kind === open ? 'primary' : undefined}
+                plain={kind === open ? undefined : true}
+                dimColor={kind === open ? undefined : true}
+                label={label}
+                onPress={() => setTab($, kind)}
+              />
+            ))}
             <Button key="go-add" plain dimColor label="＋ Add" onPress={() => goTo($, 'add')} />
             {favs.length > 0 ? <Button key="go-edit" plain dimColor label="✎ Edit" onPress={() => goTo($, 'edit')} /> : null}
           </Box>
-          {here.length === 0 ? <Text dimColor>No favourites here yet. Press ＋ Add.</Text> : null}
+          {here.length === 0 ? (
+            <Text dimColor>{open === 'skill' ? 'No skills here yet. Press ＋ Add.' : 'No plugins here yet. Press ＋ Add.'}</Text>
+          ) : null}
           <Box flexDirection="row" flexWrap="wrap" gap={2}>
             {here.map(f => (
               <Box key={`fav-${f.command}`} flexDirection="column">
@@ -226,7 +249,7 @@ export const register: Register = on => {
                       if (!command) return
                       const isNew = !favs.some(f => f.command === command)
                       await setFavourites($, list => setIcon(list, command, icon))
-                      await goTo($, isNew ? 'action' : 'grid')
+                      await goTo($, isNew ? 'kind' : 'grid')
                     }}
                   />
                 ))}
@@ -237,40 +260,41 @@ export const register: Register = on => {
       )
     }
 
-    // ---- Action: what a click on the new favourite does ----
-    if (view === 'action') {
+    // ---- Kind: a plugin (runs) or a skill (waits in the text box) ----
+    if (view === 'kind') {
       const command = await read($, pending)
       const fav = favs.find(f => f.command === command)
-      const chosen = fav ? actionOf(fav) : 'run'
-      const choose = async (action: ClickAction) => {
-        if (command) await setFavourites($, list => setAction(list, command, action))
+      const guess = fav ? kindOfFav(fav) : 'plugin'
+      const choose = async (kind: Kind) => {
+        if (command) await setFavourites($, list => setKind(list, command, kind))
+        await setTab($, kind)
         await goTo($, 'grid')
       }
       return (
         <Box flexDirection="column" gap={1} paddingX={1}>
           <Text bold color="claude">
-            {fav?.icon} When you click /{command}:
+            {fav?.icon} Is /{command} a plugin or a skill?
           </Text>
           <Box flexDirection="column" gap={1}>
             <Button
-              key="choose-fill"
-              variant={chosen === 'fill' ? 'primary' : undefined}
-              label="✏️ Put it in my text box, so I can add an instruction"
-              onPress={() => choose('fill')}
+              key="choose-plugin"
+              variant={guess === 'plugin' ? 'primary' : undefined}
+              label="🧩 Plugin: a click runs it at once"
+              onPress={() => choose('plugin')}
             />
             <Button
-              key="choose-run"
-              variant={chosen === 'run' ? 'primary' : undefined}
-              label="⚡ Run it at once"
-              onPress={() => choose('run')}
+              key="choose-skill"
+              variant={guess === 'skill' ? 'primary' : undefined}
+              label="🎓 Skill: a click puts it in my text box, for an instruction"
+              onPress={() => choose('skill')}
             />
           </Box>
-          <Text dimColor>The highlighted one is the usual choice for this kind. You can change it later in ✎ Edit.</Text>
+          <Text dimColor>The highlighted one is the best guess. You can move it later in ✎ Edit.</Text>
         </Box>
       )
     }
 
-    // ---- Edit: change an icon or what a click does, or remove a favourite ----
+    // ---- Edit: change an icon, move between Plugins and Skills, or remove a favourite ----
     return (
       <Box flexDirection="column" gap={1} paddingX={1}>
         <Box flexDirection="row" gap={2} alignItems="center">
@@ -298,11 +322,11 @@ export const register: Register = on => {
                 }}
               />
               <Button
-                key={`action-${f.command}`}
+                key={`kind-${f.command}`}
                 plain
                 dimColor
-                label={actionOf(f) === 'fill' ? '✏️ Text box' : '⚡ Runs'}
-                onPress={() => setFavourites($, list => setAction(list, f.command, actionOf(f) === 'fill' ? 'run' : 'fill'))}
+                label={kindOfFav(f) === 'skill' ? '🎓 Skill' : '🧩 Plugin'}
+                onPress={() => setFavourites($, list => setKind(list, f.command, kindOfFav(f) === 'skill' ? 'plugin' : 'skill'))}
               />
               <Button
                 key={`remove-${f.command}`}

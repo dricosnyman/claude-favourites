@@ -28,9 +28,9 @@ test('picking an icon adds a favourite or changes its icon', () => {
 
 import { defaultAction, ICONS, setAction } from './labels'
 
-test('140 icons, none repeated', () => {
-  expect(ICONS.length).toBe(140)
-  expect(new Set(ICONS).size).toBe(140)
+test('150 icons, none repeated', () => {
+  expect(ICONS.length).toBe(150)
+  expect(new Set(ICONS).size).toBe(150)
 })
 
 test('immediate commands run; skills wait in the text box; other commands run', () => {

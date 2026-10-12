@@ -3,7 +3,7 @@
 import type { ClickAction, Favourite } from '../types'
 
 // The icons to pick from, grouped by the kind of skill they suit: emoji, so they draw in colour everywhere
-// with nothing to download. Single-codepoint emoji only, so every terminal and the desktop app draw them alike.
+// with nothing to download. Single-codepoint emoji where possible, so every terminal and the desktop app draw them alike.
 export const ICON_GROUPS: { area: string; icons: string[] }[] = [
   { area: 'Coding', icons: ['💻', '⌨️', '🖥️', '🖱️', '💾', '🛠️', '🔧', '⚙️', '🧰', '🐞', '🧱', '🌐', '🔗', '🗄️', '🔌', '📡', '📟', '🐙', '🧩', '📦'] },
   { area: 'Writing & docs', icons: ['📝', '✏️', '✍️', '🖋️', '📄', '📑', '📋', '📜', '📖', '📚', '🗒️', '📰', '🗞️', '💭', '🔤'] },
@@ -15,6 +15,8 @@ export const ICON_GROUPS: { area: string; icons: string[] }[] = [
   { area: 'Safety & upkeep', icons: ['🔒', '🔐', '🔑', '🛡️', '🚨', '⚠️', '🚦', '🩹', '🧹', '🔄', '🗜️', '✅'] },
   { area: 'Fun & AI', icons: ['🤖', '✨', '🪄', '🔮', '👾', '⚡', '🚀', '🔥', '⭐', '🌈', '🎉', '🏆', '🎲', '🔍'] },
   { area: 'Life & world', icons: ['🌍', '🏠', '❤️', '🍳', '☕', '⚽', '🌙'] },
+  // Keycap numbers are three characters each (digit, emoji style, keycap); the desktop app draws them as tiles.
+  { area: 'Numbers', icons: ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣'] },
 ]
 
 export const ICONS = ICON_GROUPS.flatMap(g => g.icons)
